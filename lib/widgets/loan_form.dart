@@ -27,24 +27,26 @@ class _LoanFormState extends State<LoanForm> {
   int _loanAmountResult = 0;
   int _loanPeriodResult = 0;
   String _errorMessage = '';
+  String? _selectedCountry;
+  final List<String> _countries = ["Estonia", "Latvia", "Lithuania"];
+
 
   // Submit the form and update the state with the loan decision results.
   // Only submits if the form inputs are validated.
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final result = await _apiService.requestLoanDecision(
-          _nationalId, _loanAmount, _loanPeriod);
+          _nationalId, _loanAmount, _loanPeriod, _selectedCountry);
       setState(() {
         int tempAmount = int.parse(result['loanAmount'].toString());
         int tempPeriod = int.parse(result['loanPeriod'].toString());
 
-        if (tempAmount <= _loanAmount || tempPeriod > _loanPeriod) {
-          _loanAmountResult = int.parse(result['loanAmount'].toString());
+        if (tempPeriod > _loanPeriod) {
           _loanPeriodResult = int.parse(result['loanPeriod'].toString());
         } else {
-          _loanAmountResult = _loanAmount;
           _loanPeriodResult = _loanPeriod;
         }
+        _loanAmountResult = int.parse(result['loanAmount'].toString());
         _errorMessage = result['errorMessage'].toString();
       });
     } else {
@@ -88,6 +90,38 @@ class _LoanFormState extends State<LoanForm> {
                       );
                     },
                   ),
+
+                  const SizedBox(height: 20.0),
+
+                  DropdownButtonFormField<String>(
+                    value: _selectedCountry,
+                      decoration: InputDecoration(
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueAccent),
+                        ),
+                      ),
+                    hint: Text("Select Country", style: TextStyle(color: Colors.white)), // ✅ Ensures hint is white
+                    style: TextStyle(color: Colors.white),
+                    dropdownColor: Colors.black,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedCountry = newValue;
+                        _submitForm();
+                      });
+                    },
+                    items: _countries.map((String country) {
+                      return DropdownMenuItem<String>(
+                        value: country,
+                        child: Text(country),
+                      );
+                    }).toList(),
+                    validator: (value) =>
+                        value == null ? "Please select a country" : null,
+                  ),
+
                   const SizedBox(height: 60.0),
                   Text('Loan Amount: $_loanAmount €'),
                   const SizedBox(height: 8),
